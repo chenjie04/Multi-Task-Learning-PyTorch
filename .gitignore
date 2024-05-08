@@ -1,0 +1,8 @@
+seism/
+work_dirs/
+__pycache__
+build/
+result_visualization/
+tmp/
+log/
+.vscode/

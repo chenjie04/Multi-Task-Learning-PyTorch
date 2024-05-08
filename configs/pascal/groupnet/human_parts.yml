@@ -1,0 +1,36 @@
+# Setup
+setup: single_task
+fp16: True
+aux_loss: False
+
+# Database
+train_db_name: PASCALContext
+val_db_name: PASCALContext
+trBatch: 12
+valBatch: 12
+nworkers: 4
+
+# Optimizer and scheduler
+epochs: 300
+optimizer: adam
+optimizer_kwargs:
+   lr: 0.0001
+   weight_decay: 0.0001
+scheduler: poly
+
+# Model
+model: baseline_moe
+model_kwargs:
+   channels: 32
+   num_tasks: 4
+   num_shared: 1
+backbone: groupnet
+backbone_kwargs:
+   dilated: False
+head: deeplab
+
+# Tasks
+task_dictionary:
+   include_human_parts: True
+
+eval_final_10_epochs_only: True
