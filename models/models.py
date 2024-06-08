@@ -31,8 +31,6 @@ class MultiTaskModel(nn.Module):
         self.decoders = decoders
         self.tasks = tasks # ['semseg', 'human_parts', 'sal', 'normals']
         
-        
-
     def forward(self, x, feature_extraction=False):
         
         out_size = x.size()[2:]
@@ -42,10 +40,10 @@ class MultiTaskModel(nn.Module):
         else:
             return feature_maps
     
-class GroupMultiTaskModel(nn.Module):
+class SquadNetMultiTaskModel(nn.Module):
     """ Multi-task baseline model with shared encoder + task-specific decoders """
     def __init__(self, backbone: nn.Module, decoders: nn.ModuleDict, tasks: list, num_shared: int):
-        super(GroupMultiTaskModel, self).__init__()
+        super(SquadNetMultiTaskModel, self).__init__()
         assert(set(decoders.keys()) == set(tasks))
         self.backbone = backbone
         self.decoders = decoders

@@ -19,14 +19,14 @@ optimizer_kwargs:
 scheduler: poly
 
 # Model
-model: groupnet
+model: squadnet
 model_kwargs:
    num_tasks: 4
    num_shared: 2
-backbone: groupnet
+backbone: squadnet
 backbone_kwargs:
    channels: 32
-   depths: [8, 8, 8]
+   depths: [4, 4, 4]
    channel_shuffle: [True, True, False]
    dilated: False
 head: deeplab

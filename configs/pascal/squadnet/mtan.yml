@@ -1,32 +1,45 @@
 # Setup
 setup: multi_task
-fp16: True
-aux_loss: False
 
 # Database
 train_db_name: PASCALContext
 val_db_name: PASCALContext
 trBatch: 6
 valBatch: 6
-nworkers: 4
+nworkers: 6
 
 # Optimizer and scheduler
 epochs: 300
-optimizer: adam
+optimizer: sgd
 optimizer_kwargs:
-   lr: 0.0001
+   lr: 0.005
    weight_decay: 0.0001
+   momentum: 0.9
+   nesterov: False
 scheduler: poly
 
 # Model
-model: baseline
+model: mtan 
 model_kwargs:
    channels: 32
    num_tasks: 4
    num_shared: 1
-backbone: groupnet
+   mtan_kwargs:
+      stages: ['layer1', 'layer2', 'layer3', 'layer4']
+      channels:
+         layer1: 64
+         layer2: 128
+         layer3: 256
+         layer4: 512
+      downsample:
+         layer1: True
+         layer2: False
+         layer3: False
+         layer4: False
+backbone: resnet18
 backbone_kwargs:
-   dilated: False
+   pretrained: False
+   dilated: True
 head: deeplab
 
 # Tasks
@@ -47,5 +60,3 @@ loss_kwargs:
        sal: 5.0
       #  edge: 50.0
        normals: 10.0
-
-eval_final_10_epochs_only: True

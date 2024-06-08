@@ -1,7 +1,5 @@
 # Setup
 setup: single_task
-fp16: True
-aux_loss: False
 
 # Database
 train_db_name: PASCALContext
@@ -19,18 +17,13 @@ optimizer_kwargs:
 scheduler: poly
 
 # Model
-model: baseline_moe
-model_kwargs:
-   channels: 32
-   num_tasks: 4
-   num_shared: 1
-backbone: groupnet
+model: baseline
+backbone: resnet18
 backbone_kwargs:
-   dilated: False
+   pretrained: False
+   dilated: True
 head: deeplab
 
 # Tasks
 task_dictionary:
-   include_human_parts: True
-
-eval_final_10_epochs_only: True
+   include_semseg: True

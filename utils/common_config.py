@@ -36,13 +36,8 @@ def get_backbone(p):
         backbone = hrnet_w18(p['backbone_kwargs']['pretrained'])
         backbone_channels = [18, 36, 72, 144]
 
-    elif p['backbone'] == 'dcnv3':
-        from models.dcnv3 import DCNv3BackBone as DCNv3
-        backbone = DCNv3()
-        backbone_channels = 512
-
     elif p['backbone'] == 'groupnet':
-        from models.groupnet import GroupNet
+        from models.SquadNet import GroupNet
         backbone = GroupNet(
             channels=p['backbone_kwargs']['channels'],
             num_tasks=p['model_kwargs']['num_tasks'],
@@ -52,7 +47,7 @@ def get_backbone(p):
         backbone_channels = p['backbone_kwargs']['channels'] * int(math.pow(2, (3-1))) * (p['model_kwargs']['num_tasks'] + p['model_kwargs']['num_shared'])
    
     elif p['backbone'] == 'no_groupnet':
-        from models.no_groupnet import NoGroupNet
+        from models.no_squadnet import NoGroupNet
         backbone = NoGroupNet(
             channels=p['backbone_kwargs']['channels'],
             num_tasks=p['model_kwargs']['num_tasks'],
@@ -103,11 +98,6 @@ def get_model(p):
             task = p.TASKS.NAMES[0]
             head = get_head(p, backbone_channels, task)
             model = SingleTaskModel(backbone, head, task)
-        elif p['model'] == 'baseline_moe': 
-            from models.models import SingleTaskModelMoE
-            task = p.TASKS.NAMES[0]
-            head = get_head(p, backbone_channels, task)
-            model = SingleTaskModelMoE(backbone, head, task)
 
 
     elif p['setup'] == 'multi_task':
@@ -116,11 +106,11 @@ def get_model(p):
             heads = torch.nn.ModuleDict({task: get_head(p, backbone_channels, task) for task in p.TASKS.NAMES})
             model = MultiTaskModel(backbone, heads, p.TASKS.NAMES)
 
-        elif p['model'] == 'groupnet':
+        elif p['model'] == 'squadnet':
             backbone_channels = p['backbone_kwargs']['channels'] * int(math.pow(2, (3-1))) * (1 + p['model_kwargs']['num_shared'])
-            from models.models import GroupMultiTaskModel
+            from models.models import SquadNetMultiTaskModel
             heads = torch.nn.ModuleDict({task: get_head(p, backbone_channels, task) for task in p.TASKS.NAMES})
-            model = GroupMultiTaskModel(backbone, heads, p.TASKS.NAMES, num_shared=p['model_kwargs']['num_shared'])
+            model = SquadNetMultiTaskModel(backbone, heads, p.TASKS.NAMES, num_shared=p['model_kwargs']['num_shared'])
 
 
         elif p['model'] == 'cross_stitch':

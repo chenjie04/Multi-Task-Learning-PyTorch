@@ -1,42 +1,34 @@
 # Setup
 setup: multi_task
+fp16: True
+aux_loss: False
 
 # Database
 train_db_name: PASCALContext
 val_db_name: PASCALContext
-trBatch: 12
-valBatch: 12
-nworkers: 4
+trBatch: 6
+valBatch: 6
+nworkers: 6
 
 # Optimizer and scheduler
-epochs: 20
-optimizer: sgd
+epochs: 300
+optimizer: adam
 optimizer_kwargs:
-   lr: 0.005
+   lr: 0.0001
    weight_decay: 0.0001
-   momentum: 0.9
-   nesterov: False
 scheduler: poly
 
 # Model
-model: cross_stitch
+model: squadnet
 model_kwargs:
-   channels: 32
    num_tasks: 4
-   num_shared: 1
-   cross_stitch_kwargs: 
-      alpha: 0.8
-      beta: 0.05
-      stages: ['layer1', 'layer2', 'layer3', 'layer4']
-      channels:
-         layer1: 64
-         layer2: 128
-         layer3: 256
-         layer4: 512
-backbone: resnet18
+   num_shared: 2
+backbone: squadnet
 backbone_kwargs:
-   pretrained: False
-   dilated: True
+   channels: 32
+   depths: [8, 8, 8]
+   channel_shuffle: [True, True, False]
+   dilated: False
 head: deeplab
 
 # Tasks
@@ -57,3 +49,5 @@ loss_kwargs:
        sal: 5.0
       #  edge: 50.0
        normals: 10.0
+
+# eval_final_10_epochs_only: True
