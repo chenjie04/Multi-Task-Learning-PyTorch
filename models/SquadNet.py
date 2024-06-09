@@ -428,7 +428,7 @@ class BasicBlock(BaseModule):
         return x
 
 
-class GroupNet(BaseModule):
+class SquadNet(BaseModule):
     r"""
     Args:
         core_op (str): Core operator. Default: 'DCNv3'
@@ -523,7 +523,7 @@ class GroupNet(BaseModule):
 
 def test():
     x = torch.randn(6, 3, 512, 512).cuda()
-    model = GroupNet().cuda()
+    model = SquadNet().cuda()
     y = model(x)
     print(model)
     print(y.shape)

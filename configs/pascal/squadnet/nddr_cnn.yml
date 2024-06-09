@@ -21,9 +21,6 @@ scheduler: poly
 # Model
 model: nddr_cnn 
 model_kwargs:
-   channels: 32
-   num_tasks: 4
-   num_shared: 1
    nddr_cnn_kwargs: 
       alpha: 0.8
       beta: 0.05
@@ -48,7 +45,7 @@ task_dictionary:
    include_sal: True
    # include_edge: True
    include_normals: True
-   edge_w: 0.95
+   # edge_w: 0.95
 
 # Loss kwargs
 loss_kwargs:

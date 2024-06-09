@@ -1,7 +1,7 @@
 date
 
-python get_flops.py --config_env configs/env.yml --config_exp configs/nyud/resnet50_groupnet/nddr_cnn.yml --shape 480 640
+python get_flops.py --config_env configs/env.yml --config_exp configs/pascal/squadnet/mtan.yml --shape 512 512 # nudy 480 640
 
-python main.py --config_env configs/env.yml --config_exp configs/nyud/resnet50_groupnet/nddr_cnn.yml 
+python main_pcgrad.py --config_env configs/env.yml --config_exp configs/pascal/squadnet/mtan.yml 
 
 date

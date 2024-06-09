@@ -15,7 +15,7 @@ from PIL import Image
 import numpy as np
 import torch.utils.data as data
 import scipy.io as sio
-from six.moves import urllib
+# from six.moves import urllib
 
 from utils.mypath import MyPath
 from utils.utils import mkdir_if_missing

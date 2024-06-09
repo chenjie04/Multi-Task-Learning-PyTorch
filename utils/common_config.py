@@ -36,9 +36,9 @@ def get_backbone(p):
         backbone = hrnet_w18(p['backbone_kwargs']['pretrained'])
         backbone_channels = [18, 36, 72, 144]
 
-    elif p['backbone'] == 'groupnet':
-        from models.SquadNet import GroupNet
-        backbone = GroupNet(
+    elif p['backbone'] == 'squadnet':
+        from models.SquadNet import SquadNet
+        backbone = SquadNet(
             channels=p['backbone_kwargs']['channels'],
             num_tasks=p['model_kwargs']['num_tasks'],
             num_shared=p['model_kwargs']['num_shared'],
@@ -46,9 +46,9 @@ def get_backbone(p):
             channel_shuffle=p['backbone_kwargs']['channel_shuffle'],)
         backbone_channels = p['backbone_kwargs']['channels'] * int(math.pow(2, (3-1))) * (p['model_kwargs']['num_tasks'] + p['model_kwargs']['num_shared'])
    
-    elif p['backbone'] == 'no_groupnet':
-        from models.no_squadnet import NoGroupNet
-        backbone = NoGroupNet(
+    elif p['backbone'] == 'no_squadnet':
+        from models.no_squadnet import NoSquadNet
+        backbone = NoSquadNet(
             channels=p['backbone_kwargs']['channels'],
             num_tasks=p['model_kwargs']['num_tasks'],
             num_shared=p['model_kwargs']['num_shared'],

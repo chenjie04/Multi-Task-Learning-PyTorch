@@ -15,7 +15,7 @@ from utils.common_config import get_train_dataset, get_transformations,\
                                 get_optimizer, get_model, adjust_learning_rate,\
                                 get_criterion
 from utils.logger import Logger
-from train.train_utils import train_vanilla, train_fp16
+from train.train_utils import train_pcgrad_amp
 from evaluation.evaluate_utils import eval_model, validate_results, save_model_predictions,\
                                     eval_all_results
 from termcolor import colored
@@ -87,9 +87,6 @@ def main():
         save_model_predictions(p, val_dataloader, model)
         best_result = eval_all_results(p)
     
-    if p.__contains__('fp16') and p['fp16']:
-        from torch.cuda.amp import GradScaler
-        scaler = GradScaler(init_scale=512)
 
     # Main loop
     print(colored('Starting main loop', 'blue'))
@@ -104,13 +101,7 @@ def main():
 
         # Train 
         print('Train ...')
-        if p.__contains__('fp16') and p['fp16']:
-            aux_loss = False
-            if p.__contains__('aux_loss') and p['aux_loss']:
-                aux_loss = p['aux_loss']
-            eval_train = train_fp16(p, train_dataloader, model, criterion, optimizer, epoch, scaler, aux_loss)
-        else:
-            eval_train = train_vanilla(p, train_dataloader, model, criterion, optimizer, epoch)
+        eval_train = train_pcgrad_amp(p, train_dataloader, model, criterion, optimizer, epoch)
 
         # Evaluate
             # Check if need to perform eval first
