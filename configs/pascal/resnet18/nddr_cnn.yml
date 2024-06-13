@@ -5,8 +5,8 @@ setup: multi_task
 train_db_name: PASCALContext
 val_db_name: PASCALContext
 trBatch: 12
-valBatch: 12
-nworkers: 4
+valBatch: 4
+nworkers: 6
 
 # Optimizer and scheduler
 epochs: 300
@@ -56,3 +56,4 @@ loss_kwargs:
        sal: 5.0
       #  edge: 50.0
        normals: 10.0
+eval_final_10_epochs_only: True
