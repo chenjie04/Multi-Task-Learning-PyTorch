@@ -87,6 +87,7 @@ class HumanPartsMeter(object):
 
     @torch.no_grad() 
     def update(self, pred, gt):
+        gt = gt.to(pred.device)
         pred, gt = pred.squeeze(), gt.squeeze()
         valid = (gt != 255)
         

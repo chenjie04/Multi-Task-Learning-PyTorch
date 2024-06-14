@@ -6,8 +6,8 @@ aux_loss: False
 # Database
 train_db_name: PASCALContext
 val_db_name: PASCALContext
-trBatch: 4
-valBatch: 4
+trBatch: 2
+valBatch: 2
 nworkers: 4
 
 # Optimizer and scheduler
@@ -50,4 +50,4 @@ loss_kwargs:
       #  edge: 50.0
        normals: 10.0
 
-# eval_final_10_epochs_only: True
+eval_final_10_epochs_only: True

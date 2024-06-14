@@ -167,10 +167,12 @@ def train_pcgrad_amp(p, train_loader, model, criterion, optimizer, epoch):
         # Forward pass
         images = batch['image'].cuda(non_blocking=True)
         targets = {task: batch[task].cuda(non_blocking=True) for task in p.ALL_TASKS.NAMES}
-        output = model(images)
-        
-        # Measure loss and performance
-        loss_dict = criterion(output, targets)
+
+        with torch.cuda.amp.autocast():
+            output = model(images)        
+            # Measure loss and performance
+            loss_dict = criterion(output, targets)
+
         for k, v in loss_dict.items():
             losses[k].update(v.item())
         performance_meter.update({t: get_output(output[t], t) for t in p.TASKS.NAMES}, 

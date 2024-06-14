@@ -20,6 +20,8 @@ from evaluation.evaluate_utils import eval_model, validate_results, save_model_p
                                     eval_all_results
 from termcolor import colored
 
+import torch.distributed as dist
+
 # Parser
 parser = argparse.ArgumentParser(description='Vanilla Training')
 parser.add_argument('--config_env',
@@ -29,6 +31,10 @@ parser.add_argument('--config_exp',
 args = parser.parse_args()
 
 def main():
+    dist.init_process_group("nccl")
+    rank = dist.get_rank()
+    print(f"Start running on rank {rank}.")
+
     # Retrieve config file
     cv2.setNumThreads(0)
     p = create_config(args.config_env, args.config_exp)
@@ -38,13 +44,15 @@ def main():
     # Get model
     print(colored('Retrieve model', 'blue'))
     model = get_model(p)
-    model = torch.nn.DataParallel(model)
-    model = model.cuda()
+    # create model and move it to GPU with id rank
+    device_id = rank % torch.cuda.device_count()
+    model = model.to(device_id)
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device_id], find_unused_parameters=True)
 
     # Get criterion
     print(colored('Get loss', 'blue'))
     criterion = get_criterion(p)
-    criterion.cuda()
+    criterion.to(device_id)
     print(criterion)
 
     # CUDNN
@@ -152,6 +160,8 @@ def main():
     model.load_state_dict(torch.load(p['checkpoint'])['model'])
     save_model_predictions(p, val_dataloader, model)
     eval_stats = eval_all_results(p)
+
+    dist.destroy_process_group()
 
 if __name__ == "__main__":
     main()

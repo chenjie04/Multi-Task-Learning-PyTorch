@@ -14,3 +14,10 @@ The configuration files to train the model can be found in the `configs/` direct
 
 ```shell
 python main.py --config_env configs/env.yml --config_exp configs/$DATASET/$MODEL.yml
+```
+
+### Distributed Training
+The code can be run on multiple GPUs using the following command:
+```shell
+bash dist_train.sh configs/$DATASET/$MODEL.yml $NUM_GPUS
+```

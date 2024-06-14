@@ -74,6 +74,7 @@ class SaliencyMeter(object):
     
     @torch.no_grad()
     def update(self, pred, gt):
+        gt = gt.to(pred.device)
         # Predictions and ground-truth
         b = pred.size(0)
         pred = pred.float().squeeze() / 255.

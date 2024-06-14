@@ -19,6 +19,7 @@ class EdgeMeter(object):
         
     @torch.no_grad()
     def update(self, pred, gt):
+        gt = gt.to(pred.device)
         gt = gt.squeeze()
         pred = pred.float().squeeze() / 255.
         loss = self.loss_function(pred, gt).item()

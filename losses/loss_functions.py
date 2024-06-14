@@ -24,10 +24,12 @@ class SoftMaxwithLoss(Module):
         self.criterion = nn.NLLLoss(ignore_index=255)
 
     def forward(self, out, label):
+        label = label.to(out.device)
         assert not label.requires_grad
         # out shape  batch_size x channels x h x w
         # label shape batch_size x 1 x h x w
         label = label[:, 0, :, :].long()
+
         loss = self.criterion(self.softmax(out), label)
 
         return loss
@@ -45,6 +47,7 @@ class BalancedCrossEntropyLoss(Module):
         self.pos_weight = pos_weight
 
     def forward(self, output, label, void_pixels=None):
+        label = label.to(output.device)
         assert (output.size() == label.size())
         labels = torch.ge(label, 0.5).float()
 
@@ -95,6 +98,7 @@ class BinaryCrossEntropyLoss(Module):
         self.batch_average = batch_average
 
     def forward(self, output, label, void_pixels=None):
+        label = label.to(output.device)
         assert (output.size() == label.size())
 
         labels = torch.ge(label, 0.5).float()
@@ -136,6 +140,7 @@ class DepthLoss(nn.Module):
             raise NotImplementedError('Loss {} currently not supported in DepthLoss'.format(loss))
 
     def forward(self, out, label):
+        label = label.to(out.device)
         mask = (label != 255)
         return self.loss(torch.masked_select(out, mask), torch.masked_select(label, mask))
 
@@ -176,6 +181,7 @@ class NormalsLoss(Module):
             raise NotImplementedError
 
     def forward(self, out, label, ignore_label=255):
+        label = label.to(out.device)
         assert not label.requires_grad
         mask = (label != ignore_label)
         n_valid = torch.sum(mask).item()
