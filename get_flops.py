@@ -32,17 +32,17 @@ def main():
     # input
     shape = args.shape
 
-    # print(colored('\nRetrieve backbone', 'blue'))
-    # print("Complexity analysis on the backbone:")
-    # # Get backbone
-    # backbone = get_backbone(p)[0]
-    # backbone.eval()
+    print(colored('\nRetrieve backbone', 'blue'))
+    print("Complexity analysis on the backbone:")
+    # Get backbone
+    backbone = get_backbone(p)[0]
+    backbone.eval()
 
-    # with torch.cuda.device(0):   
-    #     macs, params = get_model_complexity_info(backbone, (3, *shape), as_strings=True,
-    #                                        print_per_layer_stat=True, verbose=True)
-    #     print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
-    #     print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+    with torch.cuda.device(0):   
+        macs, params = get_model_complexity_info(backbone, (3, *shape), as_strings=True,
+                                           print_per_layer_stat=True, verbose=True)
+        print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
+        print('{:<30}  {:<8}'.format('Number of parameters: ', params))
 
     print(colored('\nRetrieve model', 'blue'))
     print("Complexity analysis on the whole model:")
