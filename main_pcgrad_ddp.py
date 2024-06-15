@@ -11,14 +11,24 @@ import torch
 
 from utils.config import create_config
 from utils.common_config import get_train_dataset, get_transformations,\
-                                get_val_dataset, get_train_dataloader, get_val_dataloader,\
+                                get_val_dataset, get_train_dataloader_ddp, get_val_dataloader,\
                                 get_optimizer, get_model, adjust_learning_rate,\
                                 get_criterion
 from utils.logger import Logger
-from train.train_utils import train_vanilla, train_fp16
+from train.train_utils import train_pcgrad_amp_ddp
 from evaluation.evaluate_utils import eval_model, validate_results, save_model_predictions,\
                                     eval_all_results
 from termcolor import colored
+import torch.distributed as dist
+import torch.nn as nn
+
+def weights_init(m):
+    if isinstance(m, nn.Conv2d):
+        nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+    elif isinstance(m, nn.Linear):
+        nn.init.xavier_uniform_(m.weight)
+        m.bias.data.fill_(0.01)
+
 
 # Parser
 parser = argparse.ArgumentParser(description='Vanilla Training')
@@ -26,9 +36,20 @@ parser.add_argument('--config_env',
                     help='Config file for the environment')
 parser.add_argument('--config_exp',
                     help='Config file for the experiment')
+parser.add_argument("--local_rank", default=0, type=int)
 args = parser.parse_args()
 
 def main():
+
+    torch.manual_seed(42)  # 设置随机种子以确保可重复性
+    # 设置所有GPU的随机种子
+    torch.cuda.manual_seed_all(42)
+
+    dist.init_process_group(backend='nccl')
+    dist.barrier()
+    rank = dist.get_rank()
+    print(f"Start running basic DDP example on rank {rank}.")
+
     # Retrieve config file
     cv2.setNumThreads(0)
     p = create_config(args.config_env, args.config_exp)
@@ -38,13 +59,19 @@ def main():
     # Get model
     print(colored('Retrieve model', 'blue'))
     model = get_model(p)
-    model = torch.nn.DataParallel(model)
-    model = model.cuda()
+    model.apply(weights_init)
+    # create model and move it to GPU with id rank
+    device_id = rank % torch.cuda.device_count()
+    print(f"Device id: {device_id}")
+    model = model.to(device_id)
+    # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device_id],
+                                                      output_device=device_id, find_unused_parameters=True)
 
     # Get criterion
     print(colored('Get loss', 'blue'))
     criterion = get_criterion(p)
-    criterion.cuda()
+    criterion.to(device_id)
     print(criterion)
 
     # CUDNN
@@ -64,7 +91,7 @@ def main():
     train_dataset = get_train_dataset(p, train_transforms)
     val_dataset = get_val_dataset(p, val_transforms)
     true_val_dataset = get_val_dataset(p, None) # True validation dataset without reshape 
-    train_dataloader = get_train_dataloader(p, train_dataset)
+    train_dataloader, train_sampler = get_train_dataloader_ddp(p, train_dataset)
     val_dataloader = get_val_dataloader(p, val_dataset)
     print('Train samples %d - Val samples %d' %(len(train_dataset), len(val_dataset)))
     print('Train transformations:')
@@ -87,9 +114,6 @@ def main():
         save_model_predictions(p, val_dataloader, model)
         best_result = eval_all_results(p)
     
-    if p.__contains__('fp16') and p['fp16']:
-        from torch.cuda.amp import GradScaler
-        scaler = GradScaler()
 
     # Main loop
     print(colored('Starting main loop', 'blue'))
@@ -98,29 +122,35 @@ def main():
         print(colored('Epoch %d/%d' %(epoch+1, p['epochs']), 'yellow'))
         print(colored('-'*10, 'yellow'))
 
+        train_sampler.set_epoch(epoch)
+
         # Adjust lr
         lr = adjust_learning_rate(p, optimizer, epoch)
-        print('Adjusted learning rate to {:.5f}'.format(lr))
+        print('Adjusted learning rate to {:.8f}'.format(lr))
 
         # Train 
         print('Train ...')
-        if p.__contains__('fp16') and p['fp16']:
-            aux_loss = False
-            if p.__contains__('aux_loss') and p['aux_loss']:
-                aux_loss = p['aux_loss']
-            eval_train = train_fp16(p, train_dataloader, model, criterion, optimizer, epoch, scaler, aux_loss)
-        else:
-            eval_train = train_vanilla(p, train_dataloader, model, criterion, optimizer, epoch)
+        eval_train = train_pcgrad_amp_ddp(p, train_dataloader, model, criterion, optimizer, epoch, device_id)
 
         # Evaluate
             # Check if need to perform eval first
-        if 'eval_final_5_epochs_only' in p.keys() and p['eval_final_5_epochs_only']: # To speed up -> Avoid eval every epoch, and only test during final 10 epochs.
-            if epoch + 1 > p['epochs'] - 5:
+        if 'eval_final_10_epochs_only' in p.keys() and p['eval_final_10_epochs_only']: # To speed up -> Avoid eval every epoch, and only test during final 10 epochs.
+            if epoch + 1 > p['epochs'] - 10:
                 eval_bool = True
             else:
                 eval_bool = False
         else:
-            eval_bool = True
+            if 'eval_freq' in p.keys():
+                if (epoch + 1) % p['eval_freq'] == 0:
+                    eval_bool = True
+                else:
+                    eval_bool = False
+            else:
+                if (epoch + 1) % 10 == 0:
+                    eval_bool = True
+                else:
+                    eval_bool = False
+
 
         # Perform evaluation
         if eval_bool:
@@ -134,7 +164,8 @@ def main():
 
         # Checkpoint
         print('Checkpoint ...')
-        torch.save({'optimizer': optimizer.state_dict(), 'model': model.state_dict(), 
+        if device_id == 0:
+            torch.save({'optimizer': optimizer.state_dict(), 'model': model.state_dict(), 
                     'epoch': epoch + 1, 'best_result': best_result}, p['checkpoint'])
 
     # Evaluate best model at the end
@@ -143,7 +174,7 @@ def main():
     save_model_predictions(p, val_dataloader, model)
     eval_stats = eval_all_results(p)
 
+    dist.destroy_process_group()
+
 if __name__ == "__main__":
     main()
-
-    

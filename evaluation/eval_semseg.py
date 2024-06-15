@@ -100,7 +100,6 @@ class SemsegMeter(object):
 
     @torch.no_grad()
     def update(self, pred, gt):
-        gt = gt.to(pred.device)
         pred = pred.squeeze()
         gt = gt.squeeze()
         valid = (gt != 255)

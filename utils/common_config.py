@@ -362,13 +362,28 @@ def get_train_dataset(p, transforms):
     return database
 
 from torch.utils.data import DistributedSampler
-def get_train_dataloader(p, dataset):
+def get_train_dataloader_ddp(p, dataset):
     """Return the train dataloader"""
-    sampler = DistributedSampler(dataset, shuffle=True)
+    sampler = DistributedSampler(dataset,shuffle=True,)
     trainloader = DataLoader(
         dataset,
         batch_size=p["trBatch"],
         sampler=sampler,
+        pin_memory=True,
+        persistent_workers=True,
+        prefetch_factor=2,
+        drop_last=True,
+        num_workers=p["nworkers"],
+        collate_fn=collate_mil,
+    )
+    return trainloader, sampler
+
+def get_train_dataloader(p, dataset):
+    """Return the train dataloader"""
+    trainloader = DataLoader(
+        dataset,
+        batch_size=p["trBatch"],
+        shuffle=True,
         pin_memory=True,
         persistent_workers=True,
         prefetch_factor=2,
@@ -418,14 +433,27 @@ def get_val_dataset(p, transforms):
 
     return database
 
-
-def get_val_dataloader(p, dataset):
+def get_val_dataloader_ddp(p, dataset):
     """Return the validation dataloader"""
-    sampler = DistributedSampler(dataset, shuffle=False)
+    samper = DistributedSampler(dataset,shuffle=False,)
     testloader = DataLoader(
         dataset,
         batch_size=p["valBatch"],
-        sampler=sampler,
+        sampler=samper,
+        drop_last=False,
+        pin_memory=True,
+        persistent_workers=True,
+        prefetch_factor=2,
+        num_workers=p["nworkers"],
+    )
+    return testloader, samper
+def get_val_dataloader(p, dataset):
+    """Return the validation dataloader"""
+    
+    testloader = DataLoader(
+        dataset,
+        batch_size=p["valBatch"],
+        shuffle=False,
         drop_last=False,
         pin_memory=True,
         persistent_workers=True,

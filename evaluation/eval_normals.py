@@ -71,7 +71,7 @@ class NormalsMeter(object):
 
     @torch.no_grad()
     def update(self, pred, gt):
-        gt = gt.to(pred.device)
+
         # Performance measurement happens in pixel wise fashion (Same as code from ASTMT (above))
         pred = 2 * pred / 255 - 1 
         pred = pred.permute(0, 3, 1, 2) # [B, C, H, W]
