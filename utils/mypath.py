@@ -17,7 +17,7 @@ class MyPath(object):
     """
     @staticmethod
     def db_root_dir(database=''):
-        db_root = '/home/chenjie04/workstation/data/'
+        db_root = '/root/autodl-tmp/'
         db_names = {'PASCAL_MT', 'NYUD_MT'}
 
         if database in db_names:
