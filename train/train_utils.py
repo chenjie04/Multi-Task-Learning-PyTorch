@@ -186,13 +186,17 @@ def train_pcgrad_amp_ddp(p, train_loader, model, criterion, optimizer, epoch, de
         if device_id == 0 and i % 25 == 0:
             progress.display(i)
 
-    eval_results = performance_meter.get_score(verbose = True)
+    if device_id == 0:
+        verbose = True
+    else:
+        verbose = False
+        
+    eval_results = performance_meter.get_score(verbose = verbose)
 
     return eval_results
 
-def train_pcgrad_amp(p, train_loader, model, criterion, optimizer, epoch):
+def train_pcgrad_amp(p, train_loader, model, criterion, optimizer, epoch, scaler):
     """ Vanilla training with fixed loss weights """
-    scaler = torch.cuda.amp.GradScaler()
     num_tasks = len(p.TASKS.NAMES)
     pc_optimizer = PCGradAMP(num_tasks, optimizer, scaler=scaler, reduction='sum', cpu_offload= False)
     losses = get_loss_meters(p)
@@ -221,6 +225,46 @@ def train_pcgrad_amp(p, train_loader, model, criterion, optimizer, epoch):
         pc_optimizer.zero_grad()
         pc_optimizer.backward([loss_dict[t] for t in p.TASKS.NAMES])
         pc_optimizer.step()
+
+        if i % 25 == 0:
+            progress.display(i)
+
+    eval_results = performance_meter.get_score(verbose = True)
+
+    return eval_results
+
+from train.gradvac_amp import GradVacAMP
+def train_gradvac_amp(p, train_loader, model, criterion, optimizer, epoch, scaler):
+    """ Vanilla training with fixed loss weights """
+    num_tasks = len(p.TASKS.NAMES)
+    DEVICE = next(model.parameters()).device
+    vac_optimizer = GradVacAMP(num_tasks, optimizer, DEVICE, scaler = scaler, beta = 1e-2, reduction='sum', cpu_offload = False)
+    losses = get_loss_meters(p)
+    performance_meter = PerformanceMeter(p)
+    progress = ProgressMeter(len(train_loader),
+        [v for v in losses.values()], prefix="Epoch: [{}]".format(epoch))
+
+    model.train()
+    
+    for i, batch in enumerate(train_loader):
+        # Forward pass
+        images = batch['image'].cuda(non_blocking=True)
+        targets = {task: batch[task].cuda(non_blocking=True) for task in p.ALL_TASKS.NAMES}
+
+        with torch.cuda.amp.autocast():
+            output = model(images)        
+            # Measure loss and performance
+            loss_dict = criterion(output, targets)
+
+        for k, v in loss_dict.items():
+            losses[k].update(v.item())
+        performance_meter.update({t: get_output(output[t], t) for t in p.TASKS.NAMES}, 
+                                 {t: targets[t] for t in p.TASKS.NAMES})
+        
+        # Backward
+        vac_optimizer.zero_grad()
+        vac_optimizer.backward([loss_dict[t] for t in p.TASKS.NAMES])
+        vac_optimizer.step()
 
         if i % 25 == 0:
             progress.display(i)

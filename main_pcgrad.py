@@ -91,6 +91,8 @@ def main():
     # Main loop
     print(colored('Starting main loop', 'blue'))
 
+    scaler = torch.cuda.amp.GradScaler()
+
     for epoch in range(start_epoch, p['epochs']):
         print(colored('Epoch %d/%d' %(epoch+1, p['epochs']), 'yellow'))
         print(colored('-'*10, 'yellow'))
@@ -101,7 +103,7 @@ def main():
 
         # Train 
         print('Train ...')
-        eval_train = train_pcgrad_amp(p, train_dataloader, model, criterion, optimizer, epoch)
+        eval_train = train_pcgrad_amp(p, train_dataloader, model, criterion, optimizer, epoch, scaler=scaler)
 
         # Evaluate
             # Check if need to perform eval first

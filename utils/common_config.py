@@ -371,7 +371,7 @@ def get_train_dataloader_ddp(p, dataset):
         sampler=sampler,
         pin_memory=True,
         persistent_workers=True,
-        prefetch_factor=2,
+        prefetch_factor=4,
         drop_last=True,
         num_workers=p["nworkers"],
         collate_fn=collate_mil,

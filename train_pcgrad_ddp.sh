@@ -6,7 +6,7 @@ python get_flops.py --config_env configs/env.yml --config_exp configs/pascal/squ
 MASTER_ADDR=${MASTER_ADDR:-"127.0.0.1"}
 
 torchrun --nnodes=1 \
-    --nproc_per_node=2 \
+    --nproc_per_node=4 \
     --rdzv_id=100 \
     --rdzv_backend=c10d \
     --rdzv_endpoint=$MASTER_ADDR:29501 \

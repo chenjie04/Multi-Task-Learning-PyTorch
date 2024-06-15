@@ -8,7 +8,7 @@ train_db_name: PASCALContext
 val_db_name: PASCALContext
 trBatch: 12
 valBatch: 12
-nworkers: 16
+nworkers: 12
 
 # Optimizer and scheduler
 epochs: 300
