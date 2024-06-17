@@ -1,3 +1,11 @@
+"""
+@misc{Pytorch-PCGrad-GradVac-AMP-GradAccum,
+  author = {Antoine Nzeyimana},
+  title = {Pytorch-PCGrad-GradVac-AMP-GradAccum/Antoine Nzeyimana},
+  url = {https://github.com/anzeyimana/Pytorch-PCGrad-GradVac-AMP-GradAccum},
+  year = {2022}
+}
+"""
 # MIT License
 #
 # Copyright (c) 2022 Antoine Nzeyimana
