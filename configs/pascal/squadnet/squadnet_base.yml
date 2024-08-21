@@ -6,9 +6,9 @@ aux_loss: False
 # Database
 train_db_name: PASCALContext
 val_db_name: PASCALContext
-trBatch: 12
-valBatch: 12
-nworkers: 16  # 4 * num_GPUs
+trBatch: 6
+valBatch: 6
+nworkers: 8  # 4 * num_GPUs
 
 # Optimizer and scheduler
 epochs: 300

@@ -222,7 +222,6 @@ def train_pcgrad_amp(p, train_loader, model, criterion, optimizer, epoch, scaler
                                  {t: targets[t] for t in p.TASKS.NAMES})
         
         # Backward
-        pc_optimizer.zero_grad()
         pc_optimizer.backward([loss_dict[t] for t in p.TASKS.NAMES])
         pc_optimizer.step()
 
@@ -262,7 +261,6 @@ def train_gradvac_amp(p, train_loader, model, criterion, optimizer, epoch, scale
                                  {t: targets[t] for t in p.TASKS.NAMES})
         
         # Backward
-        vac_optimizer.zero_grad()
         vac_optimizer.backward([loss_dict[t] for t in p.TASKS.NAMES])
         vac_optimizer.step()
 
