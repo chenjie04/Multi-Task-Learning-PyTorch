@@ -84,8 +84,9 @@ def main():
     else:
         print(colored('No checkpoint file at {}'.format(p['checkpoint']), 'blue'))
         start_epoch = 0
-        save_model_predictions(p, val_dataloader, model)
-        best_result = eval_all_results(p)
+        # save_model_predictions(p, val_dataloader, model)
+        # best_result = eval_all_results(p)
+        best_result = {'multi_task_performance':-200}
     
     if p.__contains__('fp16') and p['fp16']:
         from torch.cuda.amp import GradScaler

@@ -80,35 +80,73 @@ def train_fp16(p, train_loader, model, criterion, optimizer, epoch, scaler, aux_
         [v for v in losses.values()], prefix="Epoch: [{}]".format(epoch))
 
     model.train()
-    
-    for i, batch in enumerate(train_loader):
-        # Forward pass
-        images = batch['image'].cuda(non_blocking=True)
-        targets = {task: batch[task].cuda(non_blocking=True) for task in p.ALL_TASKS.NAMES}
-        with torch.cuda.amp.autocast():
-            output = model(images)
-        
-            # Measure loss and performance
-            loss_dict = criterion(output, targets)
 
-        for k, v in loss_dict.items():
-            losses[k].update(v.item())
-        performance_meter.update({t: get_output(output[t], t) for t in p.TASKS.NAMES}, 
-                                 {t: targets[t] for t in p.TASKS.NAMES})
-        
-        # Backward
+    if epoch == 0:
+        for i, batch in enumerate(train_loader):
+            # Forward pass
+            images = batch['image'].cuda(non_blocking=True)
+            targets = {task: batch[task].cuda(non_blocking=True) for task in p.ALL_TASKS.NAMES}
+            with torch.cuda.amp.autocast():
+                output = model(images)
+            
+                # Measure loss and performance
+                loss_dict = criterion(output, targets)
 
-        optimizer.zero_grad()
-        if aux_loss:
-            # 因为模型并行训练，所以aux_loss等于gpu的数量,所以求和之后要除以gpu数量
-            loss_dict['total'] += output['aux_loss'].sum()/torch.cuda.device_count()
-        scaler.scale(loss_dict['total']).backward()
-        scaler.step(optimizer)
+            for k, v in loss_dict.items():
+                losses[k].update(v.item())
+            performance_meter.update({t: get_output(output[t], t) for t in p.TASKS.NAMES}, 
+                                    {t: targets[t] for t in p.TASKS.NAMES})
+            
+            # Backward
 
-        scaler.update()
+            optimizer.zero_grad()
+            task_id = 0
+            num_tasks = len(p.TASKS.NAMES)
+            for task in p.TASKS.NAMES:
+                if task_id < num_tasks - 1:
+                    scaler.scale(loss_dict[task]).backward(retain_graph=True)
+                else:
+                    scaler.scale(loss_dict[task]).backward()
+                task_id += 1
 
-        if i % 25 == 0:
-            progress.display(i)
+                print("task:", task)
+                for name, param in model.named_parameters():
+                    print(name, param.grad.shape)
+
+            scaler.step(optimizer)
+            scaler.update()
+
+            if i % 25 == 0:
+                progress.display(i)
+    else:
+        for i, batch in enumerate(train_loader):
+            # Forward pass
+            images = batch['image'].cuda(non_blocking=True)
+            targets = {task: batch[task].cuda(non_blocking=True) for task in p.ALL_TASKS.NAMES}
+            with torch.cuda.amp.autocast():
+                output = model(images)
+            
+                # Measure loss and performance
+                loss_dict = criterion(output, targets)
+
+            for k, v in loss_dict.items():
+                losses[k].update(v.item())
+            performance_meter.update({t: get_output(output[t], t) for t in p.TASKS.NAMES}, 
+                                    {t: targets[t] for t in p.TASKS.NAMES})
+            
+            # Backward
+
+            optimizer.zero_grad()
+            if aux_loss:
+                # 因为模型并行训练，所以aux_loss等于gpu的数量,所以求和之后要除以gpu数量
+                loss_dict['total'] += output['aux_loss'].sum()/torch.cuda.device_count()
+            scaler.scale(loss_dict['total']).backward()
+            scaler.step(optimizer)
+
+            scaler.update()
+
+            if i % 25 == 0:
+                progress.display(i)
 
     eval_results = performance_meter.get_score(verbose = True)
 

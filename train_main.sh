@@ -1,0 +1,1 @@
+python main.py --config_env configs/env.yml --config_exp configs/nyud/squadnet/squadnet_small.yml
